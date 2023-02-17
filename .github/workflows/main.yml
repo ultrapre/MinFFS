@@ -1,0 +1,38 @@
+name: Build MinFFS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      # 安装 MSYS2 和 MinGW
+      - name: Install MSYS2 and MinGW
+        uses: msys2/setup-msys2@v2
+        with:
+          mingw_arch: 'i686'
+          install: 'mingw-w64-i686-toolchain'
+
+      # 获取 MinFFS 代码仓库的源代码
+      - name: Checkout MinFFS
+        uses: actions/checkout@v2
+        with:
+          repository: abcdec/MinFFS
+          ref: main
+
+      # 使用 MinGW 编译 MinFFS
+      - name: Build MinFFS
+        run: |
+          cd MinFFS
+          mingw32-make
+
+      # 打包可执行文件并上传到 artifact
+      - name: Package and upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: MinFFS
+          path: 'MinFFS.exe'
+          if-no-files-found: error
