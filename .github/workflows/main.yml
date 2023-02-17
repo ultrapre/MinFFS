@@ -6,29 +6,51 @@ on:
       - main
   workflow_dispatch:
 
+
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      # 安装 MSYS2 和 MinGW
-      - name: Install MSYS2 and MinGW
-        uses: msys2/setup-msys2@v2
-        with:
-          mingw_arch: 'i686'
-          install: 'mingw-w64-i686-toolchain'
+      # 安装依赖项
+      - name: Install Dependencies
+        run: |
+          choco install -y mingw
+          choco install -y nsis
+          choco install -y 7zip
+          choco install -y wget
+
+      # 下载和安装 ICU
+      - name: Install ICU
+        run: |
+          wget https://github.com/unicode-org/icu/releases/download/release-68-2/icu4c-68_2-src.zip
+          7z x icu4c-68_2-src.zip
+          cd icu/source
+          mingw32-make
+
+      # 下载和编译 wxWidgets
+      - name: Build wxWidgets
+        run: |
+          wget https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.5/wxWidgets-3.1.5.tar.bz2
+          tar -xvf wxWidgets-3.1.5.tar.bz2
+          cd wxWidgets-3.1.5
+          mkdir build_mingw
+          cd build_mingw
+          ../configure --enable-unicode --with-msw --prefix=/mingw
+          mingw32-make
+          mingw32-make install
 
       # 获取 MinFFS 代码仓库的源代码
       - name: Checkout MinFFS
         uses: actions/checkout@v2
         with:
-          repository: abcdec/MinFFS
+          repository: your_username/MinFFS
           ref: main
 
-      # 使用 MinGW 编译 MinFFS
+      # 编译 MinFFS
       - name: Build MinFFS
         run: |
           cd MinFFS
-          mingw32-make
+          mingw32-make -f MinFFS.mak
 
       # 打包可执行文件并上传到 artifact
       - name: Package and upload
